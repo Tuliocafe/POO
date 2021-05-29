@@ -1,3 +1,214 @@
+import sqlite3
+
+banco = sqlite3.connect('Banco_Bibliotecabd.bd')
+
+cursor = banco.cursor()
+escolha = escolhaavancada = int(0)
+listalivros = []
+nome = data = ''
+
+
 class biblioteca:
 
-   Aguarde Update
+
+    def __init__(self,id , titulo, autor, datapublicacao, datacompra, lido, dataconclusao ):
+        self.id = id
+        self.titulo = titulo
+        self.autor = autor
+        self.datapublicacao = datapublicacao
+        self.datacompra = datacompra
+        self.lido = lido
+        self.dataconclusao = dataconclusao
+
+
+    def livroinfo(self):
+        print('')
+        print(f'Titulo:         {self.titulo}')
+        print(f'Autor:          {self.autor}')
+        print(f'Ano Publicacao: {self.datapublicacao}')
+        print(f'Ano Aquisicao:  {self.datacompra}')
+        print(f'Foi lido ?      {self.lido}')
+        if self.lido == 'Sim':
+            print(f'Data leitura ?  {self.dataconclusao}')
+
+
+    def lerlivro(self, dataconclusao):
+        self.lido = 'Sim'
+        self.dataconclusao = dataconclusao
+        print(f'Parabens por ler o livro {self.titulo}')
+        cursor.execute("update livros set lido = ? where id = ?", (self.lido, self.id))
+        cursor.execute("update livros set dataleitura = ? where id = ?", (dataconclusao, self.id))
+        banco.commit()
+
+
+    def todoslivros(self):
+        temporario = []
+        for c in range(0, len(listalivros)):
+            temporario.append(listalivros[c].titulo)
+        # print(temporario)
+        temporario.sort()
+        print('Seus livros são: ')
+        for c in range(0, len(temporario)):
+            print(temporario[c])
+
+
+    def buscatitulo(self, titulo):
+        for c in listalivros:
+            if titulo.upper() == c.titulo.upper():
+                print(biblioteca.livroinfo(c))
+            else:
+                print('Nenhum livro encontrado !!')
+
+
+    def buscaautor(self, autor):
+        listaautor = []
+        validador = False
+        for c in range(0, len(listalivros)):
+            if autor.upper() == listalivros[c].autor.upper():
+                listaautor.append(listalivros[c])
+                biblioteca.livroinfo(listalivros[c])
+                validador = True
+        if validador == False:
+            print('Nenhum autor encontrado.')
+        return
+
+
+    def naolidos(self):
+        print('*' * 40)
+        print('Os Livros ainda nao lidos sao:')
+        for livro in listalivros:
+            if livro.lido == 'Nao':
+                print(f' {livro.id}......... {livro.titulo}')
+        print('*'*40)
+
+def menu():
+    escolha = int(input("""     
+    1 - Visualizar todos os Livros (Ordem Alfabetica)
+    2 - Cadastrar um livro novo
+    3 - Buscar um livro por Titulo
+    4 - Buscar os livros de um Autor
+    5 - Vizualisar livros Nao lidos
+    6 - Marcar livro como lido
+    7 - Sair do Menu
+    8 - inserir 3 Livros de teste
+    -- O que deseja fazer ?  """))
+    return escolha
+
+
+def criardatabase():
+    cursor.execute("""CREATE TABLE livros (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    titulo text NOT NULL,
+                    autor text,
+                    datapublicacao date,
+                    datacompra date,
+                    lido text,
+                    dataleitura date);""")
+    return listalivros
+
+
+print('*'*59)
+print('******    Bem vindo ao LLT seu conrole de livros     ******')
+print('*'*59)
+escolha = 0
+yn = input('Novo por aqui ? (s/n): ').upper()
+if yn == 'S':
+    criardatabase()
+print('*' * 59)
+
+while True:
+    listalivros.clear()
+    print('')
+    print('     *********** Menu ***********')
+    escolha = menu()
+    cursor.execute(f"""select * from livros""")
+    novolivro = cursor.fetchall()
+
+    for l in range(0, len(novolivro)):
+        listalivros.append(biblioteca(id=novolivro[l][0],
+                                      titulo=novolivro[l][1],
+                                      autor=novolivro[l][2],
+                                      datapublicacao=novolivro[l][3],
+                                      datacompra=novolivro[l][4],
+                                      lido=novolivro[l][5],
+                                      dataconclusao=novolivro[l][6]))
+    if escolha == 1:
+        if not listalivros:
+            print('')
+            print('**  Nenhum livro cadastrado')
+
+        else:
+            listalivros[0].todoslivros()
+
+    if escolha == 2:
+        c_titulo = input('Qual nome do Livro ? ')
+        c_autor = input('Qual nome do autor ? ')
+        c_datapublicacao = input('Quando o livro foi publicado (AAAA-MM-DD) ? ')
+        c_datacompra = input('Quando o livro foi adquirido (AAAA-MM-DD) ? ')
+        c_lido = input('Voce ja leu o livro (Sim/Nao) ? ')
+        if c_lido == 'Sim':
+            c_dataleitura = input('Qual voce leu (AAAA-MM-DD) ? ')
+        else:
+            c_dataleitura = '0000-00-00'
+
+        cursor.execute("""
+        INSERT INTO livros (titulo, autor, datapublicacao, datacompra,lido, dataleitura)
+        VALUES (?,?,?,?,?,?)""", (c_titulo, c_autor, c_datapublicacao, c_datacompra, c_lido, c_dataleitura))
+        banco.commit()
+
+    if escolha == 3:
+        if not listalivros:
+            print('')
+            print('**  Nenhum livro cadastrado')
+        else:
+            nome = input('Qual o nome do titulo ? ')
+            listalivros[0].buscatitulo(nome)
+
+    if escolha == 4:
+        if not listalivros:
+            print('')
+            print('**  Nenhum livro cadastrado')
+        else:
+            nome = input('Qual o nome do autor ? ')
+            listalivros[0].buscaautor(nome)
+
+    if escolha == 5:
+        if not novolivro:
+            print('')
+            print('**  Nenhum livro cadastrado')
+
+        listalivros[0].naolidos()
+        yn = input('Deseja ver detalhes de algum livro (S/N) ?').upper()
+        if yn == 'S':
+            escolha = int(input('Qual id do Livro ?'))
+            listalivros[escolha-1].livroinfo()
+
+    if escolha == 6:
+        if not listalivros:
+            print('')
+            print('**  Nenhum livro cadastrado')
+        else:
+            listalivros[0].naolidos()
+            escolha = int(input('Qual id do livro que desaja ler ? '))
+            data = str(input('Quando vc finalizou esse livro (AAAA-MM-DD) ? '))
+            listalivros[escolha-1].lerlivro(data)
+
+
+    if escolha == 7:
+        banco.close()
+        print('*' * 59)
+        print('Obrigado por usar nosso sitema')
+        print('                              Criado por: Tulio Cafe')
+        break
+
+
+    if escolha == 8:
+            livroteste = [('Parace facil mas nao é', 'Tulio', '2014-06-10', '2020-01-01', 'Nao', '0000-00-00'),
+                          ('juvenil', 'Miguel', '2019-12-01', '2020-05-06', 'Nao', '0000-00-00'),
+                          ('Ao mestre com carinho', 'Fabricio', '2016-06-10', '2016-06-10', 'Sim','2016-06-10')]
+            cursor.executemany("""INSERT INTO livros (titulo, autor, datapublicacao, datacompra, lido, dataleitura)
+                                VALUES (?,?,?,?,?,?)""", livroteste)
+            banco.commit()
+
+
+
+
