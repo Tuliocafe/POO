@@ -1,7 +1,6 @@
 import sqlite3
 
 banco = sqlite3.connect('Banco_Bibliotecabd.bd')
-
 cursor = banco.cursor()
 escolha = escolhaavancada = int(0)
 listalivros = []
@@ -42,6 +41,7 @@ class biblioteca:
 
 
     def todoslivros(self):
+        print('')
         temporario = []
         for c in range(0, len(listalivros)):
             temporario.append(listalivros[c].titulo)
@@ -53,11 +53,13 @@ class biblioteca:
 
 
     def buscatitulo(self, titulo):
+        validador = False
         for c in listalivros:
             if titulo.upper() == c.titulo.upper():
+                validador = True
                 print(biblioteca.livroinfo(c))
-            else:
-                print('Nenhum livro encontrado !!')
+        if validador == False:
+            print('Nenhum livro encontrado !!')
 
 
     def buscaautor(self, autor):
@@ -90,9 +92,10 @@ def menu():
     5 - Vizualisar livros Nao lidos
     6 - Marcar livro como lido
     7 - Sair do Menu
-    8 - inserir 3 Livros de teste
+    8 - Menu Avancado
     -- O que deseja fazer ?  """))
     return escolha
+
 
 
 def criardatabase():
@@ -103,23 +106,31 @@ def criardatabase():
                     datacompra date,
                     lido text,
                     dataleitura date);""")
+    banco.commit()
     return listalivros
+
+try:
+    criardatabase()
+    print('*' * 59)
+    print('Criando nova Base de dados')
+except sqlite3.OperationalError:
+    print('Banco de dados conectado')
 
 
 print('*'*59)
 print('******    Bem vindo ao LLT seu conrole de livros     ******')
 print('*'*59)
-escolha = 0
-yn = input('Novo por aqui ? (s/n): ').upper()
-if yn == 'S':
-    criardatabase()
-print('*' * 59)
+
 
 while True:
     listalivros.clear()
     print('')
     print('     *********** Menu ***********')
-    escolha = menu()
+    try:
+        escolha = menu()
+    except ValueError:
+        print('Digito invalido, favor tentar novamente. ')
+
     cursor.execute(f"""select * from livros""")
     novolivro = cursor.fetchall()
 
@@ -144,7 +155,7 @@ while True:
         c_autor = input('Qual nome do autor ? ')
         c_datapublicacao = input('Quando o livro foi publicado (AAAA-MM-DD) ? ')
         c_datacompra = input('Quando o livro foi adquirido (AAAA-MM-DD) ? ')
-        c_lido = input('Voce ja leu o livro (Sim/Nao) ? ')
+        c_lido = input('Voce ja leu o livro (Sim/Nao) ? ').capitalize()
         if c_lido == 'Sim':
             c_dataleitura = input('Qual voce leu (AAAA-MM-DD) ? ')
         else:
@@ -160,7 +171,7 @@ while True:
             print('')
             print('**  Nenhum livro cadastrado')
         else:
-            nome = input('Qual o nome do titulo ? ')
+            nome = str(input('Qual o nome do titulo ? '))
             listalivros[0].buscatitulo(nome)
 
     if escolha == 4:
@@ -168,7 +179,7 @@ while True:
             print('')
             print('**  Nenhum livro cadastrado')
         else:
-            nome = input('Qual o nome do autor ? ')
+            nome = str(input('Qual o nome do autor ? '))
             listalivros[0].buscaautor(nome)
 
     if escolha == 5:
@@ -202,6 +213,12 @@ while True:
 
 
     if escolha == 8:
+        print('1 - Inserir 3 Livros de teste')
+        print('2 - Apagar toda base de dados')
+        print('3 - Voltar ao menu anterior')
+        escolhaavancada = int(input('Qual opcao deseja ? '))
+
+        if escolhaavancada == 1:
             livroteste = [('Parace facil mas nao é', 'Tulio', '2014-06-10', '2020-01-01', 'Nao', '0000-00-00'),
                           ('juvenil', 'Miguel', '2019-12-01', '2020-05-06', 'Nao', '0000-00-00'),
                           ('Ao mestre com carinho', 'Fabricio', '2016-06-10', '2016-06-10', 'Sim','2016-06-10')]
@@ -209,6 +226,21 @@ while True:
                                 VALUES (?,?,?,?,?,?)""", livroteste)
             banco.commit()
 
+        if escolhaavancada == 2:
+            yn = ''
 
+            yn = input('Tem certesa que deseja apagar toda a base de dados (s/n)').upper()
+            if yn == 'S':
+                cursor.execute('Drop table livros')
+                print('Base de dados apagada com sucesso')
+                criardatabase()
+                print('Criando nova base de dados...')
+            else:
+                print('Digito invalido.')
 
+        if escolhaavancada == 3:
+            pass
 
+    else:
+        print('')
+        print('Digito invalido, favor digitar novamente.')
